@@ -19,6 +19,7 @@ See the Mulan PSL v2 for more details. */
 #include "common/lang/sstream.h"
 #include "common/lang/string.h"
 #include "common/log/log.h"
+#include "common/time/date.h"
 
 Value::Value(int val) { set_int(val); }
 
@@ -125,6 +126,10 @@ void Value::set_data(char *data, int length)
       value_.bool_value_ = *(int *)data != 0;
       length_            = length;
     } break;
+    case AttrType::DATES: {
+      value_.int_value_ = *(int *)data;
+      length_ = length;
+    } break;
     default: {
       LOG_WARN("unknown data type: %d", attr_type_);
     } break;
@@ -153,6 +158,14 @@ void Value::set_boolean(bool val)
   value_.bool_value_ = val;
   length_            = sizeof(val);
 }
+void Value::set_date(int val)
+{
+  reset();
+  attr_type_         = AttrType::DATES;
+  value_.int_value_  = val;
+  length_            = sizeof(val);
+}
+
 
 void Value::set_string(const char *s, int len /*= 0*/)
 {
@@ -180,6 +193,9 @@ void Value::set_value(const Value &value)
   switch (value.attr_type_) {
     case AttrType::INTS: {
       set_int(value.get_int());
+    } break;
+    case AttrType::DATES: {
+      set_date(value.get_int());
     } break;
     case AttrType::FLOATS: {
       set_float(value.get_float());
@@ -221,6 +237,13 @@ const char *Value::data() const
 string Value::to_string() const
 {
   string res;
+  //date to string
+  if (attr_type_ == AttrType::DATES)
+  {
+    res = date_to_string(value_.int_value_);
+    return res;
+  }
+  
   RC     rc = DataType::type_instance(this->attr_type_)->to_string(*this, res);
   if (OB_FAIL(rc)) {
     LOG_WARN("failed to convert value to string. type=%s", attr_type_to_string(this->attr_type_));
@@ -233,6 +256,7 @@ int Value::compare(const Value &other) const { return DataType::type_instance(th
 
 int Value::get_int() const
 {
+  ASSERT(attr_type_ != AttrType::DATES,"date can not get_int()");
   switch (attr_type_) {
     case AttrType::CHARS: {
       try {
@@ -261,6 +285,7 @@ int Value::get_int() const
 
 float Value::get_float() const
 {
+  ASSERT(attr_type_ != AttrType::DATES,"date can not get_float()");
   switch (attr_type_) {
     case AttrType::CHARS: {
       try {
@@ -291,6 +316,7 @@ string Value::get_string() const { return this->to_string(); }
 
 bool Value::get_boolean() const
 {
+  ASSERT(attr_type_ != AttrType::DATES,"date can not get_boolean()");
   switch (attr_type_) {
     case AttrType::CHARS: {
       try {

@@ -247,6 +247,7 @@ struct ErrorSqlNode
   string error_msg;
   int    line;
   int    column;
+  bool   flag;
 };
 
 /**
